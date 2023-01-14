@@ -1,0 +1,100 @@
+.section .data
+
+input_xprompt	:	.asciz	"Please enter a x: "
+input_yprompt	:	.asciz	"Please enter a y: "
+input_spec	:	.asciz	"%d"
+result		:	.asciz	"x^y = %d\n"
+
+.section .text
+
+.global main
+
+main:
+// print input prompt
+  ldr x0, =input_xprompt
+  bl printf
+
+// take x input in
+	sub sp, sp, #16
+	ldr x0, =input_spec
+	mov x1, sp
+	bl scanf
+
+// save x value from stack
+ldr x19, [sp, #0]
+// print input prompt again for y 
+  ldr x0, =input_yprompt
+  bl printf
+
+// take y input in
+	sub sp, sp, #8
+	ldr x0, =input_spec
+	mov x1, sp
+	bl scanf
+
+    ldr x20, [sp, #0]
+Recursivetime:
+
+# restore stack
+	add sp, sp, #16
+
+# move into argument
+  mov x0, x19
+  mov x1, x20
+
+# call recursive function
+	bl pow
+
+# print result
+	ldr x0, =result
+	mov x1,x2
+	bl printf
+	b exit
+
+pow:
+
+        // if x is 0
+		subs x9,x0,#0 
+		b.EQ thexvalueis0
+
+		// if y is less than zero or greater than
+		subs x10, x1, #0  
+		b.lt theyvalueislessthan0 
+        b.gt recursiveCase
+		// if y is 0 then
+		mov x2, #1
+        br x30
+
+thexvalueis0:
+        mov x2, #0
+        br x30
+theyvalueislessthan0:
+		mov x2, #0
+        br x30
+
+recursiveCase:
+	# 3 items on stack
+	sub sp, sp, #24
+	# save return address
+	stur x30, [sp, #16]
+	stur x1, [sp, #8]
+	stur x0, [sp, #0]
+
+	sub x1, x1, #1
+        bl pow
+        
+	# when brx30 is reached
+        ldr x30, [sp, #16]
+		ldr x1, [sp, #8]
+        ldr x0, [sp, #0]
+        mul x2, x2, x0
+		add sp, sp, #24
+	# return to caller
+		br x30
+
+# branch to this label on program completion
+exit:
+	mov x0, 0
+	mov x8, 93
+	svc 0
+	ret
